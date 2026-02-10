@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIDC Mental Health Services</title>
+    <script>
+    // Toggle functions for "Other" fields
+    function toggleOtherNationality() {
+        var select = document.getElementById('nationality');
+        var otherField = document.getElementById('otherNationalityField');
+        otherField.style.display = (select.value === 'other') ? 'block' : 'none';
+    }
+    
+    function toggleOtherGender() {
+        var select = document.getElementById('gender');
+        var otherField = document.getElementById('otherGenderField');
+        otherField.style.display = (select.value === 'selfdescribe') ? 'block' : 'none';
+    }
+    
+    function toggleOtherHear() {
+        var select = document.getElementById('hearAbout');
+        var otherField = document.getElementById('otherHearField');
+        otherField.style.display = (select.value === 'other') ? 'block' : 'none';
+    }
+    
+    function toggleOtherReason() {
+        var checkbox = document.getElementById('reasonOther');
+        var otherField = document.getElementById('otherReasonField');
+        otherField.style.display = checkbox.checked ? 'block' : 'none';
+    }
+    
+    function submitForm() {
+        var btn = document.getElementById('submitBtn');
+        
+        // Prevent multiple clicks
+        if (btn.disabled) return;
+        
+        var errors = [];
+        
+        if (!document.getElementById('init1').value.trim()) errors.push('First Initial / الحرف الأول');
+        if (!document.getElementById('init2').value.trim()) errors.push('Mother Initial / حرف الأم');
+        if (!document.getElementById('init3').value.trim()) errors.push('Family Initial / حرف العائلة');
+        if (!document.getElementById('dob').value) errors.push('Date of Birth / تاريخ الولادة');
+        if (!document.getElementById('nationality').value) errors.push('Nationality / الجنسية');
+        if (!document.getElementById('gender').value) errors.push('Gender / جندر');
+        if (!document.getElementById('phone').value.trim()) errors.push('Phone / الهاتف');
+        if (!document.querySelector('input[name="contactMethod"]:checked')) errors.push('Contact Method / طريقة التواصل');
+        if (!document.getElementById('contactDay').value) errors.push('Contact Day / يوم التواصل');
+        if (!document.getElementById('hearAbout').value) errors.push('How heard / كيف سمعتم');
+        if (!document.querySelector('input[name="reasons"]:checked')) errors.push('Reasons / الأسباب');
+        if (!document.querySelector('input[name="sadness"]:checked')) errors.push('Sadness / الحزن');
+        if (!document.querySelector('input[name="worry"]:checked')) errors.push('Worry / القلق');
+        if (!document.querySelector('input[name="sleep"]:checked')) errors.push('Sleep / النوم');
+        if (!document.querySelector('input[name="lifeWorth"]:checked')) errors.push('Life Worth / قيمة الحياة');
+        if (!document.querySelector('input[name="selfHarm"]:checked')) errors.push('Self Harm / إيذاء النفس');
+        if (!document.querySelector('input[name="feelSafe"]:checked')) errors.push('Feel Safe / الشعور بالأمان');
+        if (!document.querySelector('input[name="impact"]:checked')) errors.push('Impact / التأثير');
+        if (!document.getElementById('consent').checked) errors.push('Consent / الموافقة');
+        
+        var errorBox = document.getElementById('errorBox');
+        
+        if (errors.length > 0) {
+            errorBox.innerHTML = '<strong>Please complete / يرجى إكمال:</strong><br>' + errors.join('<br>');
+            errorBox.style.display = 'block';
+            errorBox.scrollIntoView({behavior: 'smooth'});
+            return;
+        }
+        
+        errorBox.style.display = 'none';
+        
+        // Disable button immediately and change appearance
+        btn.disabled = true;
+        btn.textContent = 'Submitting... / جارٍ الإرسال...';
+        btn.style.backgroundColor = '#999';
+        btn.style.cursor = 'not-allowed';
+        
+        // Calculate Scores
+        // Section 3 - Symptoms (0-3 each, total 0-9)
+        var sadnessScore = parseInt(document.querySelector('input[name="sadness"]:checked').value);
+        var worryScore = parseInt(document.querySelector('input[name="worry"]:checked').value);
+        var sleepScore = parseInt(document.querySelector('input[name="sleep"]:checked').value);
+        var symptomsTotal = sadnessScore + worryScore + sleepScore;
+        
+        // Section 4 - Safety Check
+        var lifeWorthValue = document.querySelector('input[name="lifeWorth"]:checked').value;
+        var lifeWorthScore = (lifeWorthValue === 'yes') ? 0 : (lifeWorthValue === 'sometimes') ? 2 : 3;
+        
+        var selfHarmValue = document.querySelector('input[name="selfHarm"]:checked').value;
+        var selfHarmScore = (selfHarmValue === 'no') ? 0 : (selfHarmValue === 'past') ? 2 : 5;
+        
+        var feelSafeValue = document.querySelector('input[name="feelSafe"]:checked').value;
+        var feelSafeScore = (feelSafeValue === 'yes') ? 0 : (feelSafeValue === 'sometimes') ? 2 : 4;
+        
+        var safetyTotal = lifeWorthScore + selfHarmScore + feelSafeScore;
+        
+        // Section 5 - Daily Impact (0-3)
+        var impactScore = parseInt(document.querySelector('input[name="impact"]:checked').value);
+        
+        // Total Score
+        var totalScore = symptomsTotal + safetyTotal + impactScore;
+        
+        // Risk Level
+        var riskLevel = 'LOW';
+        var riskColor = 'green';
+        var riskReason = 'Total score 0-6';
+        
+        // Check for automatic HIGH risk (current self-harm)
+        if (selfHarmValue === 'current') {
+            riskLevel = 'HIGH';
+            riskColor = 'red';
+            riskReason = 'Current self-harm thoughts reported';
+        } else if (totalScore >= 14) {
+            riskLevel = 'HIGH';
+            riskColor = 'red';
+            riskReason = 'Total score 14+';
+        } else if (totalScore >= 7) {
+            riskLevel = 'MODERATE';
+            riskColor = 'yellow';
+            riskReason = 'Total score 7-13';
+        }
+        
+        // Generate Response ID
+        var now = new Date();
+        var id = 'SIDC-' + now.getFullYear() + 
+                 String(now.getMonth()+1).padStart(2,'0') + 
+                 String(now.getDate()).padStart(2,'0') + '-' + 
+                 String(Math.floor(Math.random()*1000)).padStart(3,'0');
+        
+        // Get answer labels
+        var getLabel = function(input) {
+            var label = input.parentElement.textContent.trim();
+            return label;
+        };
+        
+        // Collect all form data
+        var formData = {
+            responseId: id,
+            timestamp: now.toISOString(),
+            initials: document.getElementById('init1').value + document.getElementById('init2').value + document.getElementById('init3').value,
+            dob: document.getElementById('dob').value,
+            nationality: document.getElementById('nationality').value,
+            nationalityOther: document.getElementById('otherNationality') ? document.getElementById('otherNationality').value : '',
+            gender: document.getElementById('gender').value,
+            genderOther: document.getElementById('otherGender') ? document.getElementById('otherGender').value : '',
+            phone: document.getElementById('phone').value,
+            contactMethod: document.querySelector('input[name="contactMethod"]:checked').value,
+            contactDay: document.getElementById('contactDay').value,
+            hearAbout: document.getElementById('hearAbout').value,
+            hearAboutOther: document.getElementById('otherHear') ? document.getElementById('otherHear').value : '',
+            reasons: Array.from(document.querySelectorAll('input[name="reasons"]:checked')).map(function(cb) { return cb.value; }).join(', '),
+            reasonOther: document.getElementById('otherReasonText') ? document.getElementById('otherReasonText').value : '',
+            // Symptoms with answers and scores
+            sadnessAnswer: getLabel(document.querySelector('input[name="sadness"]:checked')),
+            sadnessScore: sadnessScore,
+            worryAnswer: getLabel(document.querySelector('input[name="worry"]:checked')),
+            worryScore: worryScore,
+            sleepAnswer: getLabel(document.querySelector('input[name="sleep"]:checked')),
+            sleepScore: sleepScore,
+            symptomsTotal: symptomsTotal,
+            // Safety with answers and scores
+            lifeWorthAnswer: getLabel(document.querySelector('input[name="lifeWorth"]:checked')),
+            lifeWorthScore: lifeWorthScore,
+            selfHarmAnswer: getLabel(document.querySelector('input[name="selfHarm"]:checked')),
+            selfHarmScore: selfHarmScore,
+            feelSafeAnswer: getLabel(document.querySelector('input[name="feelSafe"]:checked')),
+            feelSafeScore: feelSafeScore,
+            safetyTotal: safetyTotal,
+            // Impact with answer and score
+            impactAnswer: getLabel(document.querySelector('input[name="impact"]:checked')),
+            impactScore: impactScore,
+            // Totals
+            totalScore: totalScore,
+            riskLevel: riskLevel,
+            riskReason: riskReason
+        };
+        
+        // Send to Google Sheets (replace URL with your actual script URL)
+        var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx8Fs1uQ55ddFt2Dc58FftOjE74WS750YhNOQwl2vySLgb461SM_vkkTlf-ru_1Trzp/exec';
+        
+        if (GOOGLE_SCRIPT_URL !== 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            }).catch(function(error) {
+                console.log('Submission error:', error);
+            });
+        }
+        
+        // Risk data sent to Google Sheets only (not shown to user)
+        
+        setTimeout(function() {
+            document.getElementById('formContainer').style.display = 'none';
+            document.getElementById('noticeBox2').style.display = 'none';
+            document.getElementById('thankYou').style.display = 'block';
+            document.getElementById('responseId').textContent = id;
+            window.scrollTo(0, 0);
+        }, 1000);
+    }
+    </script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 20px; line-height: 1.6; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .header { background: #00A99D; color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .header h1 { margin-bottom: 10px; }
+        .notice { background: #fff3cd; border: 1px solid #ffc107; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .section { background: white; padding: 25px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd; }
+        .section h2 { color: #00A99D; margin-bottom: 20px; font-size: 1.2rem; border-bottom: 2px solid #00A99D; padding-bottom: 10px; }
+        .field { margin-bottom: 20px; }
+        .field label { display: block; font-weight: bold; margin-bottom: 8px; }
+        .field input[type="text"], .field input[type="date"], .field input[type="tel"], .field select, .field textarea {
+            width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px;
+        }
+        .field input:focus, .field select:focus { border-color: #00A99D; outline: none; }
+        .options label { display: block; padding: 12px 15px; margin: 8px 0; background: #f9f9f9; border: 2px solid #ddd; border-radius: 6px; cursor: pointer; }
+        .options label:hover { border-color: #00A99D; background: #f0fdf4; }
+        .options input { margin-right: 10px; }
+        .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .grid3 input { text-align: center; font-size: 20px; font-weight: bold; }
+        .submit-btn {
+            display: block; width: 100%; padding: 18px; background: #00A99D; color: white; border: none;
+            border-radius: 30px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px;
+        }
+        .submit-btn:hover { background: #008b80; }
+        .error { background: #fee; color: #c00; padding: 15px; border-radius: 6px; margin-top: 15px; display: none; }
+        .thank-you { display: none; background: white; padding: 40px; border-radius: 10px; text-align: center; border: 3px solid #00A99D; }
+        .thank-you h2 { color: #00A99D; margin-bottom: 20px; }
+        .response-box { background: #d1fae5; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .arabic { color: #666; font-size: 0.95em; }
+        .required::after { content: " *"; color: red; }
+        .footer { text-align: center; padding: 20px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SIDC Mental Health Services</h1>
+            <p>Self-Assessment | استمارة التقييم الأوّلي</p>
+            <p style="font-size: 0.85em; margin-top: 10px; opacity: 0.9;">(Aligned with WHO & NMHPSS Standards | متوافقة مع معايير منظمة الصحة العالمية وبرنامج الصحة النفسية والدعم النفسي‑الاجتماعي الوطني)</p>
+        </div>
+
+        <div class="notice" id="noticeBox2" style="background: #fff3cd; border-color: #ffc107;">
+            <strong>⚠️ Important Notice | تنويه هام</strong><br><br>
+            
+            <strong>SIDC provides mental health and psychosocial support services through scheduled and planned interventions.</strong> All requests are reviewed and responded to within a defined timeframe, based on availability and assessed priority.<br><br>
+            
+            If you are experiencing <strong>severe or urgent psychological distress, feel unsafe, or believe you may be at risk of harming yourself</strong> and require immediate support, we encourage you to seek urgent assistance.<br><br>
+            
+            <strong style="color: #92400E;">If there is an immediate risk, please contact local emergency services or go to the nearest emergency department.</strong><br><br>
+            
+            You may contact <strong>EMBRACE</strong>, Lebanon's National Suicide Prevention and Emotional Support Program, which is available 24/7. EMBRACE offers confidential emotional support and crisis intervention across Lebanon.<br>
+            <div style="background: #00A99D; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 EMBRACE: 1564</div><br>
+            
+            <strong>Lebanese Red Cross:</strong><br>
+            <div style="background: #c00; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 140</div><br>
+            
+            <strong>Internal Security Forces (ISF):</strong><br>
+            <div style="background: #1e3a5f; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 112</div><br>
+            
+            <strong>Civil Defense:</strong><br>
+            <div style="background: #f97316; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 125</div><br><br>
+            
+            In addition, you may access <strong>Step-by-Step</strong>, a free, evidence-based digital self-help program developed by the World Health Organization (WHO), which provides guided support for managing distress and emotional difficulties. Step-by-Step can be used independently and does not replace professional or emergency care.<br><br>
+            
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+            
+            <div class="arabic" dir="rtl" style="text-align: right; line-height: 2;">
+                <strong>يقدّم مركز SIDC خدمات الدعم النفسي والاجتماعي من خلال تدخلات منظّمة ومجدولة،</strong> ويتم التعامل مع الطلبات الواردة والرد عليها ضمن مهلة زمنية محددة، وذلك بحسب الأولوية وتوفّر الخدمات.<br><br>
+                
+                في حال كنتم تعانون من <strong>ضيق نفسي شديد أو طارئ، أو تشعرون بعدم الأمان، أو تحتاجون إلى دعم فوري بسبب خطر وشيك بإيذاء النفس،</strong> يُنصح بطلب المساعدة العاجلة.<br><br>
+                
+                <strong style="color: #92400E;">في حال وجود خطر فوري، يُرجى التواصل مع خدمات الطوارئ المحلية أو التوجّه إلى أقرب قسم طوارئ.</strong><br><br>
+                
+                يمكنكم التواصل مع برنامج <strong>EMBRACE</strong>، وهو البرنامج الوطني للوقاية من الانتحار والدعم النفسي في لبنان، والمتاح على مدار الساعة (24/7). يقدّم برنامج EMBRACE دعمًا نفسيًا سريًا وتدخلًا في حالات الأزمات في جميع أنحاء لبنان.<br>
+                <div style="background: #00A99D; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 EMBRACE: 1564</div><br>
+                
+                <strong>الصليب الأحمر اللبناني:</strong><br>
+                <div style="background: #c00; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 140</div><br>
+                
+                <strong>قوى الأمن الداخلي:</strong><br>
+                <div style="background: #1e3a5f; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 112</div><br>
+                
+                <strong>الدفاع المدني:</strong><br>
+                <div style="background: #f97316; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 125</div><br><br>
+                
+                كما يمكنكم الاستفادة من برنامج <strong>Step-by-Step</strong>، وهو برنامج دعم نفسي رقمي مجاني قائم على أسس علمية، طوّرته منظمة الصحة العالمية (WHO)، ويقدّم إرشادًا ذاتيًا منظّمًا للمساعدة في التخفيف من الضيق النفسي وتحسين التكيّف. ويُستخدم هذا البرنامج كأداة دعم إضافية ولا يُعتبر بديلاً عن الرعاية المتخصصة أو خدمات الطوارئ.
+            </div>
+        </div>
+
+        <div id="formContainer">
+            <!-- Section 1 -->
+            <div class="section">
+                <h2>1. Basic Information | المعلومات الأساسية</h2>
+                
+                <div class="field">
+                    <label class="required">Initials (First, Mother, Family) <span class="arabic">الأحرف الأولى (الاسم، الأم، العائلة)</span></label>
+                    <div class="grid3">
+                        <input type="text" id="init1" maxlength="1" placeholder="F">
+                        <input type="text" id="init2" maxlength="1" placeholder="M">
+                        <input type="text" id="init3" maxlength="1" placeholder="L">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">Date of Birth <span class="arabic">تاريخ الولادة</span></label>
+                    <input type="date" id="dob">
+                </div>
+
+                <div class="field">
+                    <label class="required">Nationality <span class="arabic">الجنسية</span></label>
+                    <select id="nationality" onchange="toggleOtherNationality()">
+                        <option value="">Select... / اختر...</option>
+                        <option value="lebanese">Lebanese / لبناني</option>
+                        <option value="syrian">Syrian / سوري</option>
+                        <option value="palestinian">Palestinian / فلسطيني</option>
+                        <option value="iraqi">Iraqi / عراقي</option>
+                        <option value="jordanian">Jordanian / أردني</option>
+                        <option value="egyptian">Egyptian / مصري</option>
+                        <option value="sudanese">Sudanese / سوداني</option>
+                        <option value="yemeni">Yemeni / يمني</option>
+                        <option value="ethiopian">Ethiopian / إثيوبي</option>
+                        <option value="bangladeshi">Bangladeshi / بنغلاديشي</option>
+                        <option value="filipino">Filipino / فلبيني</option>
+                        <option value="srilankan">Sri Lankan / سريلانكي</option>
+                        <option value="other">Other / آخر</option>
+                    </select>
+                    <div id="otherNationalityField" style="display: none; margin-top: 10px;">
+                        <input type="text" id="otherNationality" placeholder="Please specify nationality... / يرجى تحديد الجنسية...">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">Gender <span class="arabic">جندر</span></label>
+                    <select id="gender" onchange="toggleOtherGender()">
+                        <option value="">Select... / اختر...</option>
+                        <option value="woman">Woman / امرأة</option>
+                        <option value="man">Man / رجل</option>
+                        <option value="selfdescribe">Prefer to self-describe / أفضل التوصيف الذاتي</option>
+                        <option value="prefernot">Prefer not to say / أفضل عدم الإجابة</option>
+                    </select>
+                    <div id="otherGenderField" style="display: none; margin-top: 10px;">
+                        <input type="text" id="otherGender" placeholder="Please describe... / يرجى التوصيف...">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">Phone Number <span class="arabic">رقم الهاتف</span></label>
+                    <input type="tel" id="phone" placeholder="+961...">
+                </div>
+
+                <div class="field">
+                    <label class="required">Preferred Contact Method <span class="arabic">طريقة التواصل المفضّلة</span></label>
+                    <div class="options">
+                        <label><input type="radio" name="contactMethod" value="phone"> Phone Call / اتصال هاتفي</label>
+                        <label><input type="radio" name="contactMethod" value="whatsapp"> WhatsApp / واتساب</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">Preferred Day to Contact <span class="arabic">اليوم المفضّل للتواصل</span></label>
+                    <select id="contactDay">
+                        <option value="">Select... / اختر...</option>
+                        <option value="any">Any day / أي يوم</option>
+                        <option value="monday">Monday / الاثنين</option>
+                        <option value="tuesday">Tuesday / الثلاثاء</option>
+                        <option value="wednesday">Wednesday / الأربعاء</option>
+                        <option value="thursday">Thursday / الخميس</option>
+                        <option value="friday">Friday / الجمعة</option>
+                        <option value="saturday">Saturday / السبت</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="required">How did you hear about SIDC? <span class="arabic">كيف تعرّفتم إلى SIDC؟</span></label>
+                    <select id="hearAbout" onchange="toggleOtherHear()">
+                        <option value="">Select... / اختر...</option>
+                        <option value="outreach">Outreach team / فريق العمل الميداني</option>
+                        <option value="friend">Friend or community member / صديق أو فرد من المجتمع</option>
+                        <option value="ngo">NGO referral / إحالة من منظمة</option>
+                        <option value="health">Health provider / مقدم خدمات صحية</option>
+                        <option value="social">Social media / وسائل التواصل الاجتماعي</option>
+                        <option value="previous">Previous SIDC beneficiary / مستفيد/ة سابق/ة من SIDC</option>
+                        <option value="other">Other / أخرى</option>
+                    </select>
+                    <div id="otherHearField" style="display: none; margin-top: 10px;">
+                        <input type="text" id="otherHear" placeholder="Please specify... / يرجى التحديد...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2 -->
+            <div class="section">
+                <h2>2. Reasons for Seeking Support (Past 2 Weeks) | أسباب طلب الدعم (خلال الأسبوعين الماضيين)</h2>
+                <div class="field">
+                    <label class="required">What brings you to seek mental health support? (Select all that apply) <span class="arabic">ما الأسباب الرئيسية لطلبكم الدعم النفسي؟ (يمكن اختيار أكثر من خيار)</span></label>
+                    <div class="options">
+                        <label><input type="checkbox" name="reasons" value="anxiety"> Feeling anxious, stressed, or constantly worried / الشعور بالقلق أو التوتر</label>
+                        <label><input type="checkbox" name="reasons" value="sadness"> Feeling sad, hopeless, or emotionally numb / الشعور بالحزن أو اليأس</label>
+                        <label><input type="checkbox" name="reasons" value="sleep"> Sleep difficulties or frequent nightmares / صعوبات في النوم أو كوابيس</label>
+                        <label><input type="checkbox" name="reasons" value="concentration"> Difficulty concentrating or making decisions / صعوبة في التركيز</label>
+                        <label><input type="checkbox" name="reasons" value="trauma"> Distressing memories or flashbacks / ذكريات مؤلمة أو استرجاعات</label>
+                        <label><input type="checkbox" name="reasons" value="grief"> Grief or loss / حداد أو فقدان</label>
+                        <label><input type="checkbox" name="reasons" value="relationship"> Relationship or family difficulties / صعوبات في العلاقات أو الأسرة</label>
+                        <label><input type="checkbox" name="reasons" value="anger"> Anger or emotional outbursts / الغضب أو الانفعالات</label>
+                        <label><input type="checkbox" name="reasons" value="other" id="reasonOther" onchange="toggleOtherReason()"> Other / آخر</label>
+                    </div>
+                    <div id="otherReasonField" style="display: none; margin-top: 10px;">
+                        <input type="text" id="otherReasonText" placeholder="Please specify... / يرجى التحديد...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3 -->
+            <div class="section">
+                <h2>3. Symptoms (Past 2 Weeks) | الأعراض (خلال الأسبوعين الماضيين)</h2>
+                
+                <div class="field">
+                    <label class="required">Persistent sadness / حزن مستمر</label>
+                    <div class="options">
+                        <label><input type="radio" name="sadness" value="0"> Not at all / أبدًا</label>
+                        <label><input type="radio" name="sadness" value="1"> Several days / عدة أيام</label>
+                        <label><input type="radio" name="sadness" value="2"> More than half / أكثر من النصف</label>
+                        <label><input type="radio" name="sadness" value="3"> Nearly every day / كل يوم</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">Excessive worry / قلق مفرط</label>
+                    <div class="options">
+                        <label><input type="radio" name="worry" value="0"> Not at all / أبدًا</label>
+                        <label><input type="radio" name="worry" value="1"> Several days / عدة أيام</label>
+                        <label><input type="radio" name="worry" value="2"> More than half / أكثر من النصف</label>
+                        <label><input type="radio" name="worry" value="3"> Nearly every day / كل يوم</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">Sleep problems / مشاكل النوم</label>
+                    <div class="options">
+                        <label><input type="radio" name="sleep" value="0"> Not at all / أبدًا</label>
+                        <label><input type="radio" name="sleep" value="1"> Several days / عدة أيام</label>
+                        <label><input type="radio" name="sleep" value="2"> More than half / أكثر من النصف</label>
+                        <label><input type="radio" name="sleep" value="3"> Nearly every day / كل يوم</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 4 -->
+            <div class="section">
+                <h2>4. Safety Check (Past 2 Weeks) | فحص السلامة (خلال الأسبوعين الماضيين)</h2>
+                
+                <div class="field">
+                    <label class="required">In the past two weeks, do you feel life is worth living? / خلال الأسبوعين الماضيين، هل الحياة تستحق العيش؟</label>
+                    <div class="options">
+                        <label><input type="radio" name="lifeWorth" value="yes"> Yes / نعم</label>
+                        <label><input type="radio" name="lifeWorth" value="sometimes"> Sometimes / أحيانًا</label>
+                        <label><input type="radio" name="lifeWorth" value="no"> No / لا</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">In the past two weeks, have you had thoughts of self-harm? / خلال الأسبوعين الماضيين، هل راودتكم أفكار بإيذاء النفس؟</label>
+                    <div class="options">
+                        <label><input type="radio" name="selfHarm" value="no"> No / لا</label>
+                        <label><input type="radio" name="selfHarm" value="past"> In the past / في الماضي</label>
+                        <label><input type="radio" name="selfHarm" value="current"> Currently / حاليًا</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">In the past two weeks, do you feel safe? / خلال الأسبوعين الماضيين، هل تشعرون بالأمان؟</label>
+                    <div class="options">
+                        <label><input type="radio" name="feelSafe" value="yes"> Yes / نعم</label>
+                        <label><input type="radio" name="feelSafe" value="sometimes"> Sometimes / أحيانًا</label>
+                        <label><input type="radio" name="feelSafe" value="no"> No / لا</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 5 -->
+            <div class="section">
+                <h2>5. Daily Impact (Past 2 Weeks) | التأثير اليومي (خلال الأسبوعين الماضيين)</h2>
+                <div class="field">
+                    <label class="required">How much do difficulties affect daily life? <span class="arabic">ما مدى تأثير هذه الصعوبات على حياتكم اليومية؟</span></label>
+                    <div class="options">
+                        <label><input type="radio" name="impact" value="none"> Not at all / لا تؤثر</label>
+                        <label><input type="radio" name="impact" value="mild"> Mildly / قليلاً</label>
+                        <label><input type="radio" name="impact" value="moderate"> Moderately / متوسط</label>
+                        <label><input type="radio" name="impact" value="severe"> Severely / كثيرًا</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 6 -->
+            <div class="section">
+                <h2>6. Informed Consent | الموافقة المسبقة</h2>
+                
+                <div style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #00A99D;">
+                    <h4 style="margin-bottom: 15px;">English</h4>
+                    <p style="margin-bottom: 12px;">I confirm that I have read and understood the purpose of this form. I understand that this assessment is <strong>not a diagnostic tool</strong> and is used only to help SIDC understand my needs and prioritize access to mental health and psychosocial support services.</p>
+                    
+                    <p style="margin-bottom: 12px;">I understand that my participation is <strong>voluntary</strong> and that submitting this assessment represents a request for support.</p>
+                    
+                    <p style="margin-bottom: 12px;">I understand that the information I provide will be treated as <strong>confidential</strong> and accessed only by authorized mental health staff. Confidentiality may be limited if there is a serious concern about my safety or the safety of others, in order to provide appropriate support.</p>
+                    
+                    <p style="margin-bottom: 12px;">I understand that submitting this assessment <strong>does not guarantee immediate access to services</strong>, and that responses are provided based on assessed priority and service availability.</p>
+                    
+                    <p style="margin-bottom: 12px;">SIDC is committed to a safe and respectful environment. Any form of sexual exploitation, abuse, or harassment by staff, volunteers, or partner NGOs is <strong>strictly prohibited</strong>. I understand that I have the right to report any inappropriate behavior and that reports will be handled confidentially and without retaliation.</p>
+                    
+                    <p style="margin-bottom: 12px;">I understand that any optional digital or self-help resources provided <strong>do not replace professional mental health care</strong>.</p>
+                    
+                    <p><strong>By selecting "I agree," I confirm that the information I provided is accurate to the best of my knowledge and that I consent to its use as described above.</strong></p>
+                </div>
+                
+                <div class="arabic" dir="rtl" style="background: #f0fdf4; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #00A99D; text-align: right; line-height: 2;">
+                    <h4 style="margin-bottom: 15px;">العربية</h4>
+                    <p style="margin-bottom: 12px;">أقرّ بأنني قرأت وفهمت الغاية من هذه الاستمارة، وأدرك أن هذا التقييم <strong>ليس أداة تشخيصية</strong>، ويُستخدم فقط لمساعدة مركز SIDC على فهم احتياجاتي وتحديد أولوية الوصول إلى خدمات الدعم النفسي والاجتماعي.</p>
+                    
+                    <p style="margin-bottom: 12px;">أفهم أن مشاركتي <strong>طوعية</strong>، وأن تعبئة هذه الاستمارة تُعد طلبًا للحصول على الدعم.</p>
+                    
+                    <p style="margin-bottom: 12px;">أفهم أن المعلومات التي أقدّمها ستُعامل <strong>بسرّية تامة</strong> ولن يطّلع عليها إلا فريق الصحة النفسية المخوّل. وقد تكون السرّية محدودة في حال وجود قلق جدي يتعلق بسلامتي أو سلامة الآخرين، وذلك بهدف تقديم الدعم المناسب.</p>
+                    
+                    <p style="margin-bottom: 12px;">أفهم أن تعبئة هذه الاستمارة <strong>لا تضمن الحصول الفوري على الخدمات</strong>، وأن الاستجابة تتم بحسب الأولوية وتوفّر الخدمات.</p>
+                    
+                    <p style="margin-bottom: 12px;">مركز SIDC ملتزم بتوفير بيئة آمنة ومحترمة. <strong>يُمنع منعًا باتًا</strong> أي شكل من أشكال الاستغلال أو الإساءة أو التحرش الجنسي من قبل الموظفين أو المتطوعين أو الشركاء من المنظمات غير الحكومية. وأفهم أن لي الحق في الإبلاغ عن أي سلوك غير لائق، وأنه سيتم التعامل مع البلاغات بسرّية تامة ودون أي شكل من أشكال الانتقام.</p>
+                    
+                    <p style="margin-bottom: 12px;">أفهم أن أي موارد رقمية أو أدوات دعم ذاتي يتم توفيرها <strong>لا تُعد بديلاً عن الرعاية النفسية المتخصصة</strong>.</p>
+                    
+                    <p><strong>من خلال اختياري «أوافق»، أؤكد أن المعلومات المقدّمة صحيحة حسب علمي، وأوافق على استخدامها وفق ما ورد أعلاه.</strong></p>
+                </div>
+                
+                <div class="options">
+                    <label style="background: #e8f5e9; border-color: #00A99D; border-width: 2px;"><input type="checkbox" id="consent"> <strong>I Agree / أوافق</strong></label>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">
+                Submit Assessment | إرسال الاستمارة
+            </button>
+            <div class="error" id="errorBox"></div>
+        </div>
+
+        <!-- Thank You -->
+        <div class="thank-you" id="thankYou">
+            <h2>✓ Thank You! | شكراً لكم</h2>
+            
+            <!-- English -->
+            <div style="text-align: left; margin-bottom: 30px;">
+                <p style="margin-bottom: 16px;">Thank you for providing your consent. While our mental health team reviews your request, you may choose to begin a guided self-help support program designed for individuals experiencing mild to moderate psychological distress.</p>
+                
+                <p style="font-weight: 600; margin-bottom: 16px;">Start the self-guided support program:</p>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <a href="https://stepbystep.datahq.app" target="_blank">
+                        <img src="data:image/webp;base64,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" alt="QR Code - Step by Step Program" style="width: 150px; height: 150px; border-radius: 8px; cursor: pointer;">
+                    </a>
+                    <p style="margin-top: 10px;"><a href="https://stepbystep.datahq.app" target="_blank" style="color: #00A99D; font-weight: bold;">stepbystep.datahq.app</a></p>
+                </div>
+                
+                <div style="background: #fff3cd; border: 2px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 20px;">
+                    <p style="margin: 0; color: #92400E;"><strong>Important:</strong> This program does not replace professional mental health care. If you are currently feeling unsafe or having thoughts of harming yourself, please do not proceed and wait for direct contact from our team.</p>
+                </div>
+            </div>
+            
+            <hr style="margin: 30px 0; border: none; border-top: 2px solid #ddd;">
+            
+            <!-- Arabic -->
+            <div class="arabic" dir="rtl" style="text-align: right; line-height: 2;">
+                <p style="margin-bottom: 16px;">شكرًا لمنحكم الموافقة. ريثما يقوم فريق الصحة النفسية بمراجعة طلبكم، يمكنكم اختيار البدء ببرنامج دعم ذاتي إرشادي مخصّص للأشخاص الذين يعانون من ضيق نفسي خفيف إلى متوسط.</p>
+                
+                <p style="font-weight: 600; margin-bottom: 16px;">البدء ببرنامج الدعم الذاتي الإرشادي:</p>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <img src="data:image/webp;base64,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" alt="رمز QR - برنامج Step by Step" style="width: 150px; height: 150px; border-radius: 8px;">
+                </div>
+                
+                <div style="background: #fff3cd; border: 2px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 20px;">
+                    <p style="margin: 0; color: #92400E;"><strong>تنويه مهم:</strong> لا يُعتبر هذا البرنامج بديلاً عن الرعاية النفسية المتخصصة. في حال كنتم تشعرون بعدم الأمان أو تراودكم أفكار بإيذاء النفس، يُرجى عدم المتابعة وانتظار تواصل مباشر من فريقنا.</p>
+                </div>
+            </div>
+            
+            <div class="response-box" style="margin-top: 30px;">
+                <strong>Your Response ID / رقم طلبكم:</strong><br>
+                <span id="responseId" style="font-size: 1.3em; font-family: monospace;">SIDC-000000-000</span>
+                <p style="margin-top: 10px; margin-bottom: 0;">Our team will contact you within 24-48 hours.<br><span class="arabic">سيتواصل فريقنا معكم خلال 24-48 ساعة.</span></p>
+            </div>
+            
+            <!-- HYPE App Section -->
+            <div style="background: #e0f2fe; border: 2px solid #0ea5e9; padding: 20px; border-radius: 10px; margin-top: 30px;">
+                <h3 style="color: #0369a1; margin-bottom: 15px;">💬 Chat with us on HYPE</h3>
+                
+                <p style="margin-bottom: 15px;">Whether you're looking for mental health support or any other services provided by SIDC (such as legal assistance, protection, health services, or referrals), our team is available on the HYPE application to listen, support you, and help connect you to the services you need.</p>
+                
+                <p class="arabic" dir="rtl" style="text-align: right; margin-bottom: 20px; line-height: 1.8;">تواصلوا معنا عبر تطبيق HYPE.<br>سواء كنتم تبحثون عن الدعم النفسي أو أي من الخدمات الأخرى التي يقدّمها SIDC (مثل المساعدة القانونية، الحماية، الخدمات الصحية أو الإحالات)، فريقنا متواجد عبر تطبيق HYPE للاستماع إليكم، دعمكم، ومساعدتكم في الوصول إلى الخدمات التي تناسب احتياجاتكم.</p>
+                
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <a href="https://rb.gy/dtudy4" target="_blank" style="display: inline-block; background: #000; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold;">🍎 Apple Store</a>
+                    <a href="https://rebrand.ly/696753" target="_blank" style="display: inline-block; background: #3ddc84; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold;">▶️ Play Store</a>
+                </div>
+            </div>
+            
+            <button class="submit-btn" onclick="location.reload()" style="margin-top: 20px;">New Assessment / استمارة جديدة</button>
+        </div>
+
+        <div class="footer">© 2026 SIDC Lebanon | <a href="/cdn-cgi/l/email-protection" class="__cf_emai
