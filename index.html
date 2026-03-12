@@ -30,6 +30,12 @@
         otherField.style.display = checkbox.checked ? 'block' : 'none';
     }
     
+    function toggleIdpArea() {
+        var idpYes = document.querySelector('input[name="idp"][value="yes"]');
+        var areaField = document.getElementById('idpAreaField');
+        areaField.style.display = idpYes.checked ? 'block' : 'none';
+    }
+    
     function submitForm() {
         var btn = document.getElementById('submitBtn');
         
@@ -43,9 +49,12 @@
         if (!document.getElementById('init3').value.trim()) errors.push('Family Initial / حرف العائلة');
         if (!document.getElementById('dob').value) errors.push('Date of Birth / تاريخ الولادة');
         if (!document.getElementById('nationality').value) errors.push('Nationality / الجنسية');
+        if (!document.querySelector('input[name="sex"]:checked')) errors.push('Sex at Birth / الجنس عند الولادة');
         if (!document.getElementById('gender').value) errors.push('Gender / جندر');
+        if (!document.querySelector('input[name="idp"]:checked')) errors.push('IDP Status / النزوح الداخلي');
         if (!document.getElementById('phone').value.trim()) errors.push('Phone / الهاتف');
         if (!document.querySelector('input[name="contactMethod"]:checked')) errors.push('Contact Method / طريقة التواصل');
+        if (!document.querySelector('input[name="sessionMode"]:checked')) errors.push('Session Mode / طريقة الجلسة');
         if (!document.getElementById('contactDay').value) errors.push('Contact Day / يوم التواصل');
         if (!document.getElementById('hearAbout').value) errors.push('How heard / كيف سمعتم');
         if (!document.querySelector('input[name="reasons"]:checked')) errors.push('Reasons / الأسباب');
@@ -77,9 +86,9 @@
         
         // Calculate Scores
         // Section 3 - Symptoms (0-3 each, total 0-9)
-        var sadnessScore = parseInt(document.querySelector('input[name="sadness"]:checked').value);
-        var worryScore = parseInt(document.querySelector('input[name="worry"]:checked').value);
-        var sleepScore = parseInt(document.querySelector('input[name="sleep"]:checked').value);
+        var sadnessScore = parseInt(document.querySelector('input[name="sadness"]:checked').value) || 0;
+        var worryScore = parseInt(document.querySelector('input[name="worry"]:checked').value) || 0;
+        var sleepScore = parseInt(document.querySelector('input[name="sleep"]:checked').value) || 0;
         var symptomsTotal = sadnessScore + worryScore + sleepScore;
         
         // Section 4 - Safety Check
@@ -95,10 +104,11 @@
         var safetyTotal = lifeWorthScore + selfHarmScore + feelSafeScore;
         
         // Section 5 - Daily Impact (0-3)
-        var impactScore = parseInt(document.querySelector('input[name="impact"]:checked').value);
+        var impactValue = document.querySelector('input[name="impact"]:checked').value;
+        var impactScore = (impactValue === 'none') ? 0 : (impactValue === 'mild') ? 1 : (impactValue === 'moderate') ? 2 : 3;
         
         // Total Score
-        var totalScore = symptomsTotal + safetyTotal + impactScore;
+        var totalScore = Number(symptomsTotal) + Number(safetyTotal) + Number(impactScore);
         
         // Risk Level
         var riskLevel = 'LOW';
@@ -141,10 +151,14 @@
             dob: document.getElementById('dob').value,
             nationality: document.getElementById('nationality').value,
             nationalityOther: document.getElementById('otherNationality') ? document.getElementById('otherNationality').value : '',
+            sex: document.querySelector('input[name="sex"]:checked').value,
             gender: document.getElementById('gender').value,
             genderOther: document.getElementById('otherGender') ? document.getElementById('otherGender').value : '',
+            idp: document.querySelector('input[name="idp"]:checked').value,
+            idpArea: document.getElementById('idpArea') ? document.getElementById('idpArea').value : '',
             phone: document.getElementById('phone').value,
             contactMethod: document.querySelector('input[name="contactMethod"]:checked').value,
+            sessionMode: document.querySelector('input[name="sessionMode"]:checked').value,
             contactDay: document.getElementById('contactDay').value,
             hearAbout: document.getElementById('hearAbout').value,
             hearAboutOther: document.getElementById('otherHear') ? document.getElementById('otherHear').value : '',
@@ -254,14 +268,11 @@
             You may contact <strong>EMBRACE</strong>, Lebanon's National Suicide Prevention and Emotional Support Program, which is available 24/7. EMBRACE offers confidential emotional support and crisis intervention across Lebanon.<br>
             <div style="background: #00A99D; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 EMBRACE: 1564</div><br>
             
-            <strong>Lebanese Red Cross:</strong><br>
-            <div style="background: #c00; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 140</div><br>
+            <div style="background: #c00; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 Lebanese Red Cross: 140</div><br>
             
-            <strong>Internal Security Forces (ISF):</strong><br>
-            <div style="background: #1e3a5f; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 112</div><br>
+            <div style="background: #1e3a5f; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 Internal Security Forces (ISF): 112</div><br>
             
-            <strong>Civil Defense:</strong><br>
-            <div style="background: #f97316; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 125</div><br><br>
+            <div style="background: #f97316; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 Civil Defense: 125</div><br><br>
             
             In addition, you may access <strong>Step-by-Step</strong>, a free, evidence-based digital self-help program developed by the World Health Organization (WHO), which provides guided support for managing distress and emotional difficulties. Step-by-Step can be used independently and does not replace professional or emergency care.<br><br>
             
@@ -277,14 +288,11 @@
                 يمكنكم التواصل مع برنامج <strong>EMBRACE</strong>، وهو البرنامج الوطني للوقاية من الانتحار والدعم النفسي في لبنان، والمتاح على مدار الساعة (24/7). يقدّم برنامج EMBRACE دعمًا نفسيًا سريًا وتدخلًا في حالات الأزمات في جميع أنحاء لبنان.<br>
                 <div style="background: #00A99D; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 EMBRACE: 1564</div><br>
                 
-                <strong>الصليب الأحمر اللبناني:</strong><br>
-                <div style="background: #c00; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 140</div><br>
+                <div style="background: #c00; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 الصليب الأحمر اللبناني: 140</div><br>
                 
-                <strong>قوى الأمن الداخلي:</strong><br>
-                <div style="background: #1e3a5f; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 112</div><br>
+                <div style="background: #1e3a5f; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 قوى الأمن الداخلي: 112</div><br>
                 
-                <strong>الدفاع المدني:</strong><br>
-                <div style="background: #f97316; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 125</div><br><br>
+                <div style="background: #f97316; color: white; display: inline-block; padding: 10px 25px; border-radius: 20px; font-size: 1.3em; font-weight: bold; margin: 15px 0;">📞 الدفاع المدني: 125</div><br><br>
                 
                 كما يمكنكم الاستفادة من برنامج <strong>Step-by-Step</strong>، وهو برنامج دعم نفسي رقمي مجاني قائم على أسس علمية، طوّرته منظمة الصحة العالمية (WHO)، ويقدّم إرشادًا ذاتيًا منظّمًا للمساعدة في التخفيف من الضيق النفسي وتحسين التكيّف. ويُستخدم هذا البرنامج كأداة دعم إضافية ولا يُعتبر بديلاً عن الرعاية المتخصصة أو خدمات الطوارئ.
             </div>
@@ -333,6 +341,14 @@
                 </div>
 
                 <div class="field">
+                    <label class="required">Sex at Birth <span class="arabic">الجنس عند الولادة</span></label>
+                    <div class="options">
+                        <label><input type="radio" name="sex" value="male"> Male / ذكر</label>
+                        <label><input type="radio" name="sex" value="female"> Female / أنثى</label>
+                    </div>
+                </div>
+
+                <div class="field">
                     <label class="required">Gender <span class="arabic">جندر</span></label>
                     <select id="gender" onchange="toggleOtherGender()">
                         <option value="">Select... / اختر...</option>
@@ -347,6 +363,17 @@
                 </div>
 
                 <div class="field">
+                    <label class="required">Are you currently an internally displaced person? <span class="arabic">هل أنتم حالياً من النازحين؟</span></label>
+                    <div class="options">
+                        <label><input type="radio" name="idp" value="yes" onchange="toggleIdpArea()"> Yes / نعم</label>
+                        <label><input type="radio" name="idp" value="no" onchange="toggleIdpArea()"> No / لا</label>
+                    </div>
+                    <div id="idpAreaField" style="display: none; margin-top: 10px;">
+                        <input type="text" id="idpArea" placeholder="From which area? / من أي منطقة؟">
+                    </div>
+                </div>
+
+                <div class="field">
                     <label class="required">Phone Number <span class="arabic">رقم الهاتف</span></label>
                     <input type="tel" id="phone" placeholder="+961...">
                 </div>
@@ -356,6 +383,15 @@
                     <div class="options">
                         <label><input type="radio" name="contactMethod" value="phone"> Phone Call / اتصال هاتفي</label>
                         <label><input type="radio" name="contactMethod" value="whatsapp"> WhatsApp / واتساب</label>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="required">How do you prefer the session to be conducted? <span class="arabic">كيف تفضّلون أن تُعقد الجلسة؟</span></label>
+                    <div class="options">
+                        <label><input type="radio" name="sessionMode" value="online"> Online / عبر الإنترنت</label>
+                        <label><input type="radio" name="sessionMode" value="inperson"> In-person / حضورياً</label>
+                        <label><input type="radio" name="sessionMode" value="either"> Don't mind either / لا يهم</label>
                     </div>
                 </div>
 
@@ -471,7 +507,7 @@
                 </div>
 
                 <div class="field">
-                    <label class="required">In the past two weeks, do you feel safe? / خلال الأسبوعين الماضيين، هل تشعرون بالأمان؟</label>
+                    <label class="required">In the past two weeks, do you feel safe? / خلال الأسبوعين الماضيين، هل تشعر بالأمان؟</label>
                     <div class="options">
                         <label><input type="radio" name="feelSafe" value="yes"> Yes / نعم</label>
                         <label><input type="radio" name="feelSafe" value="sometimes"> Sometimes / أحيانًا</label>
